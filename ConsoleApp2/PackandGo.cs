@@ -21,8 +21,12 @@ namespace PackandGo.cs
             ModelDoc2 swModelDoc = default(ModelDoc2);
             ModelDocExtension swModelDocExt = default(ModelDocExtension);
             PackAndGo swPackAndGo = default(PackAndGo);
-            SldWorks swApp = new SldWorks();
-
+            //SldWorks swApp = new SldWorks();
+            GetSolidworks getSW = new GetSolidworks();
+            Tuple<SldWorks, Process> processes = getSW.Solidworks(1);
+            SldWorks swApp = processes.Item1;
+            //add another line to get item 2 which is the process which you can then use to kill when it derps
+            
             /* To be used to more easily choose which assemblies to pack and go
             List<string> trNames = new List<string>(new string[] { "500", "525"});
             List<string> cmtNames = new List<string>(new string[] { "500", "525" });
