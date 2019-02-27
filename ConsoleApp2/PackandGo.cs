@@ -99,13 +99,16 @@ namespace PackandGo.cs
                 }
                 catch
                 {
+                    /*
                     Process swProcess = new Process();
                     int processID = swApp.GetProcessID();
                     swProcess = Process.GetProcessById(processID);
                     swProcess.Kill();
                     while (swProcess.HasExited == false) { }
+                    */
                     swApp = null;
                     Process Solidworks = null;
+                    Debug.Print("Solidworks Crash: Restarting Now");
                         while (swApp == null)
                         {
                             Tuple<SldWorks, Process> tuple = GetSolidworks.Solidworks(2);
