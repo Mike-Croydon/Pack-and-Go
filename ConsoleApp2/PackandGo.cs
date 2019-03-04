@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO.Compression;
@@ -22,8 +23,7 @@ namespace PackandGo.cs
             ModelDocExtension swModelDocExt = default(ModelDocExtension);
             PackAndGo swPackAndGo = default(PackAndGo);
             //SldWorks swApp = new SldWorks();
-            GetSolidworks getSW = new GetSolidworks();
-            Tuple<SldWorks, Process> processes = getSW.Solidworks(1);
+            Tuple<SldWorks, Process> processes = GetSolidworks.Solidworks(1);
             SldWorks swApp = processes.Item1;
             //add another line to get item 2 which is the process which you can then use to kill when it derps
             
@@ -41,8 +41,10 @@ namespace PackandGo.cs
             }
             */
 
-            List<string> modelNames = new List<string>(new string[] { "TR-34-20-400", "TR-34-20-425", "TR-34-20-500", "TR-34-20-525", "TR-34-20-530", "TR-34-20-600", "TR-34-20-625", "TR-34-20-630", "TR-34-20-700", "TR-34-20-725", "TR-34-20-730", "TR-34-20-900", "TR-34-20-925", "TR-34-20-930",
-                                                                      "CMT-34-20-400", "CMT-34-20-425", "CMT-34-20-500", "CMT-34-20-525", "CMT-34-20-530", "CMT-34-20-600", "CMT-34-20-625", "CMT-34-20-630", "CMT-34-20-700", "CMT-34-20-725", "CMT-34-20-730", "CMT-34-20-900", "CMT-34-20-925", "CMT-34-20-930",});
+            //List<string> modelNames = new List<string>(new string[] { "TR-34-20-400", "TR-34-20-425", "TR-34-20-500", "TR-34-20-525", "TR-34-20-530", "TR-34-20-600", "TR-34-20-625", "TR-34-20-630", "TR-34-20-700", "TR-34-20-725", "TR-34-20-730", "TR-34-20-900", "TR-34-20-925", "TR-34-20-930",
+            //                                                          "CMT-34-20-400", "CMT-34-20-425", "CMT-34-20-500", "CMT-34-20-525", "CMT-34-20-530", "CMT-34-20-600", "CMT-34-20-625", "CMT-34-20-630", "CMT-34-20-700", "CMT-34-20-725", "CMT-34-20-730", "CMT-34-20-900", "CMT-34-20-925", "CMT-34-20-930",});
+            List<string> modelNames = new List<string>(new string[] { 
+                                                                      "CMT-34-20-730"});
             int modelCount = modelNames.Count;
 
 
@@ -138,7 +140,7 @@ static class GetSolidworks
             key.SetValue("SolidWorks Journal Folders", @"C:\Users\tsowers\Documents\Journals\" + Num.ToString());
             SolidWorksPrc = System.Diagnostics.Process.Start(SolidWorksPath());
 
-            System.Threading.Thread.Sleep(11500);
+            System.Threading.Thread.Sleep(25000);
             key.SetValue("SolidWorks Journal Folders", @"C:\Users\tsowers\AppData\Roaming\SolidWorks\SOLIDWORKS 2018");
             key.Dispose();
 
