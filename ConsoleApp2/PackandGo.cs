@@ -42,10 +42,10 @@ namespace PackandGo.cs
             }
             */
 
-            //List<string> modelNames = new List<string>(new string[] { "TR-34-20-400", "TR-34-20-425", "TR-34-20-500", "TR-34-20-525", "TR-34-20-530", "TR-34-20-600", "TR-34-20-625", "TR-34-20-630", "TR-34-20-700", "TR-34-20-725", "TR-34-20-730", "TR-34-20-900", "TR-34-20-925", "TR-34-20-930",
-            //                                                        "CMT-34-20-400", "CMT-34-20-425", "CMT-34-20-500", "CMT-34-20-525", "CMT-34-20-530", "CMT-34-20-600", "CMT-34-20-625", "CMT-34-20-630", "CMT-34-20-700", "CMT-34-20-725", "CMT-34-20-730", "CMT-34-20-900", "CMT-34-20-925", "CMT-34-20-930",});
+            List<string> modelNames = new List<string>(new string[] { "TR-34-20-400", "TR-34-20-425", "TR-34-20-500", "TR-34-20-525", "TR-34-20-530", "TR-34-20-600", "TR-34-20-625", "TR-34-20-630", "TR-34-20-700", "TR-34-20-725", "TR-34-20-730", "TR-34-20-900", "TR-34-20-925", "TR-34-20-930",
+                                                                    "CMT-34-20-400", "CMT-34-20-425", "CMT-34-20-500", "CMT-34-20-525", "CMT-34-20-530", "CMT-34-20-600", "CMT-34-20-625", "CMT-34-20-630", "CMT-34-20-700", "CMT-34-20-725", "CMT-34-20-730", "CMT-34-20-900", "CMT-34-20-925", "CMT-34-20-930",});
 
-            List<string> modelNames = new List<string>(new string[] { "TR-34-20-400", "TR-34-20-425", "TR-34-20-500" });
+            //List<string> modelNames = new List<string>(new string[] { "TR-34-20-400", "TR-34-20-425", "TR-34-20-500" });
             int modelCount = modelNames.Count;
 
             while(modelNames.Count > 0)
@@ -78,12 +78,12 @@ namespace PackandGo.cs
 
                     // Include any drawings, SOLIDWORKS Simulation results, and SOLIDWORKS Toolbox components
                     swPackAndGo.IncludeDrawings = true;
-                    Debug.Print(" Include drawings: " + swPackAndGo.IncludeDrawings);
-                    swPackAndGo.IncludeSimulationResults = true;
-                    Debug.Print(" Include SOLIDWORKS Simulation results: " + swPackAndGo.IncludeSimulationResults);
-                    swPackAndGo.IncludeToolboxComponents = true;
-                    Debug.Print(" Include SOLIDWORKS Toolbox components: " + swPackAndGo.IncludeToolboxComponents);
-
+                    //Debug.Print(" Include drawings: " + swPackAndGo.IncludeDrawings);
+                    swPackAndGo.IncludeSimulationResults = false;
+                    //Debug.Print(" Include SOLIDWORKS Simulation results: " + swPackAndGo.IncludeSimulationResults);
+                    swPackAndGo.IncludeToolboxComponents = false;
+                    //Debug.Print(" Include SOLIDWORKS Toolbox components: " + swPackAndGo.IncludeToolboxComponents);
+                    swPackAndGo.IncludeSuppressed = true;
                     // Verify document paths and filenames after adding prefix and suffix
                     object getFileNames;
                     object getDocumentStatus;
@@ -95,6 +95,14 @@ namespace PackandGo.cs
 
                     for (int z = 0; z < pgGetFileNames.Length; z++)
                     {
+                        if (pgGetFileNames[z].StartsWith(@"c:\configurator"))
+                        {
+
+                        }
+                        else
+                        {
+                            Debug.Print(pgGetFileNames[z]);
+                        }
                         pgGetFileNames[z] = GetProperFilePathCapitalization(pgGetFileNames[z]);
                     }
                     swPackAndGo.SetDocumentSaveToNames(pgGetFileNames);
@@ -111,10 +119,11 @@ namespace PackandGo.cs
 
                     // Pack and Go
                     statuses = (int[])swModelDocExt.SavePackAndGo(swPackAndGo);
-                    swApp.CloseDoc(modelNames[j]);
+                    //swApp.CloseDoc(modelNames[j]);
+                    swApp.CloseAllDocuments(true);
                     modelNames.RemoveAt(0); //removes as the very last step to ensure successful execution
                 }
-                catch
+                catch(Exception e)
                 {
                     /*
                     Process swProcess = new Process();
@@ -126,6 +135,7 @@ namespace PackandGo.cs
                     swApp = null;
                     Process Solidworks = null;
                     Debug.Print("Solidworks Crash: Restarting Now");
+                    Debug.Print(e.StackTrace);
                     while (swApp == null)
                     {
                         Tuple<SldWorks, Process> tuple = GetSolidworks.Solidworks(2);
