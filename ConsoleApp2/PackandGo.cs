@@ -26,6 +26,9 @@ namespace PackandGo.cs
             //GetSolidworks getSW = new GetSolidworks();
             Tuple<SldWorks, Process> processes = GetSolidworks.Solidworks(1);
             SldWorks swApp = processes.Item1;
+            swApp.Visible = false;
+            
+            swApp.CommandInProgress = true;
             //add another line to get item 2 which is the process which you can then use to kill when it derps
 
             /* To be used to more easily choose which assemblies to pack and go
@@ -64,7 +67,10 @@ namespace PackandGo.cs
 
                     openFile = @"C:\Configurator\" + modelNames[j] + ".sldasm";
                     Debug.Print("Performing pack and go on " + modelNames[j]);
+                    Console.WriteLine("Performing pack and go on " + modelNames[j]);
+                    swApp.EnableBackgroundProcessing = true;
                     swModelDoc = swApp.OpenDoc6(openFile, (int)swDocumentTypes_e.swDocASSEMBLY, (int)swOpenDocOptions_e.swOpenDocOptions_Silent, "", ref errors, ref warnings);
+                    swApp.EnableBackgroundProcessing = false;
                     swModelDocExt = (ModelDocExtension)swModelDoc.Extension;
 
                     swPackAndGo = (PackAndGo)swModelDocExt.GetPackAndGo();
@@ -75,7 +81,7 @@ namespace PackandGo.cs
 
                     namesCount = swPackAndGo.GetDocumentNamesCount();
                     Debug.Print("  Number of model documents: " + namesCount);
-
+                    Console.WriteLine("  Number of model documents: " + namesCount);
                     // Include any drawings, SOLIDWORKS Simulation results, and SOLIDWORKS Toolbox components
                     swPackAndGo.IncludeDrawings = true;
                     //Debug.Print(" Include drawings: " + swPackAndGo.IncludeDrawings);
@@ -102,6 +108,7 @@ namespace PackandGo.cs
                         else
                         {
                             Debug.Print(pgGetFileNames[z]);
+                            Console.WriteLine("Please Remove This File and Try Again: " + pgGetFileNames[z]);
                         }
                         pgGetFileNames[z] = GetProperFilePathCapitalization(pgGetFileNames[z]);
                     }
@@ -135,6 +142,7 @@ namespace PackandGo.cs
                     swApp = null;
                     Process Solidworks = null;
                     Debug.Print("Solidworks Crash: Restarting Now");
+                    Console.WriteLine("Solidworks Crash: Restarting Now");
                     Debug.Print(e.StackTrace);
                     while (swApp == null)
                     {
@@ -232,6 +240,8 @@ namespace PackandGo.cs
                         }
                 }
                 */
+            swApp.Visible = true;
+            swApp.CommandInProgress = false;
             }
         
 
