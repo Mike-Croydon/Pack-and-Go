@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO.Compression;
+using System.IO;
 using System.Diagnostics;
 using SolidWorks.Interop.sldworks;
 using SolidWorks.Interop.swconst;
@@ -23,10 +23,14 @@ namespace PackandGo.cs
             ModelDocExtension swModelDocExt = default(ModelDocExtension);
             PackAndGo swPackAndGo = default(PackAndGo);
             //SldWorks swApp = new SldWorks();
+            //GetSolidworks getSW = new GetSolidworks();
             Tuple<SldWorks, Process> processes = GetSolidworks.Solidworks(1);
             SldWorks swApp = processes.Item1;
-            //add another line to get item 2 which is the process which you can then use to kill when it derps
+            swApp.Visible = false;
             
+            swApp.CommandInProgress = true;
+            //add another line to get item 2 which is the process which you can then use to kill when it derps
+
             /* To be used to more easily choose which assemblies to pack and go
             List<string> trNames = new List<string>(new string[] { "500", "525"});
             List<string> cmtNames = new List<string>(new string[] { "500", "525" });
@@ -41,13 +45,116 @@ namespace PackandGo.cs
             }
             */
 
-            //List<string> modelNames = new List<string>(new string[] { "TR-34-20-400", "TR-34-20-425", "TR-34-20-500", "TR-34-20-525", "TR-34-20-530", "TR-34-20-600", "TR-34-20-625", "TR-34-20-630", "TR-34-20-700", "TR-34-20-725", "TR-34-20-730", "TR-34-20-900", "TR-34-20-925", "TR-34-20-930",
-            //                                                          "CMT-34-20-400", "CMT-34-20-425", "CMT-34-20-500", "CMT-34-20-525", "CMT-34-20-530", "CMT-34-20-600", "CMT-34-20-625", "CMT-34-20-630", "CMT-34-20-700", "CMT-34-20-725", "CMT-34-20-730", "CMT-34-20-900", "CMT-34-20-925", "CMT-34-20-930",});
-            List<string> modelNames = new List<string>(new string[] { 
-                                                                      "CMT-34-20-730"});
+            List<string> modelNames = new List<string>(new string[] { "TR-34-20-400", "TR-34-20-425", "TR-34-20-500", "TR-34-20-525", "TR-34-20-530", "TR-34-20-600", "TR-34-20-625", "TR-34-20-630", "TR-34-20-700", "TR-34-20-725", "TR-34-20-730", "TR-34-20-900", "TR-34-20-925", "TR-34-20-930",
+                                                                    "CMT-34-20-400", "CMT-34-20-425", "CMT-34-20-500", "CMT-34-20-525", "CMT-34-20-530", "CMT-34-20-600", "CMT-34-20-625", "CMT-34-20-630", "CMT-34-20-700", "CMT-34-20-725", "CMT-34-20-730", "CMT-34-20-900", "CMT-34-20-925", "CMT-34-20-930",});
+
+            //List<string> modelNames = new List<string>(new string[] { "TR-34-20-400", "TR-34-20-425", "TR-34-20-500" });
             int modelCount = modelNames.Count;
 
+            while(modelNames.Count > 0)
+            {
+                int j = 0;
+                try
+                {
+                    string openFile = null;
+                    bool status = false;
+                    int warnings = 0;
+                    int errors = 0;
+                    int i = 0;
+                    int namesCount = 0;
+                    string savePath = null;
+                    int[] statuses = null;
 
+                    openFile = @"C:\Configurator\" + modelNames[j] + ".sldasm";
+                    Debug.Print("Performing pack and go on " + modelNames[j]);
+                    Console.WriteLine("Performing pack and go on " + modelNames[j]);
+                    swApp.EnableBackgroundProcessing = true;
+                    swModelDoc = swApp.OpenDoc6(openFile, (int)swDocumentTypes_e.swDocASSEMBLY, (int)swOpenDocOptions_e.swOpenDocOptions_Silent, "", ref errors, ref warnings);
+                    swApp.EnableBackgroundProcessing = false;
+                    swModelDocExt = (ModelDocExtension)swModelDoc.Extension;
+
+                    swPackAndGo = (PackAndGo)swModelDocExt.GetPackAndGo();
+
+                    savePath = @"C:\Configurator\PackandGoTest\test.zip";
+                    status = swPackAndGo.SetSaveToName(false, savePath);
+                    swPackAndGo.FlattenToSingleFolder = true;
+
+                    namesCount = swPackAndGo.GetDocumentNamesCount();
+                    Debug.Print("  Number of model documents: " + namesCount);
+                    Console.WriteLine("  Number of model documents: " + namesCount);
+                    // Include any drawings, SOLIDWORKS Simulation results, and SOLIDWORKS Toolbox components
+                    swPackAndGo.IncludeDrawings = true;
+                    //Debug.Print(" Include drawings: " + swPackAndGo.IncludeDrawings);
+                    swPackAndGo.IncludeSimulationResults = false;
+                    //Debug.Print(" Include SOLIDWORKS Simulation results: " + swPackAndGo.IncludeSimulationResults);
+                    swPackAndGo.IncludeToolboxComponents = false;
+                    //Debug.Print(" Include SOLIDWORKS Toolbox components: " + swPackAndGo.IncludeToolboxComponents);
+                    swPackAndGo.IncludeSuppressed = true;
+                    // Verify document paths and filenames after adding prefix and suffix
+                    object getFileNames;
+                    object getDocumentStatus;
+
+
+                    status = swPackAndGo.GetDocumentSaveToNames(out getFileNames, out getDocumentStatus);
+                    string[] pgGetFileNames = (string[])getFileNames;
+
+
+                    for (int z = 0; z < pgGetFileNames.Length; z++)
+                    {
+                        if (pgGetFileNames[z].StartsWith(@"c:\configurator"))
+                        {
+
+                        }
+                        else
+                        {
+                            Debug.Print(pgGetFileNames[z]);
+                            Console.WriteLine("Please Remove This File and Try Again: " + pgGetFileNames[z]);
+                        }
+                        pgGetFileNames[z] = GetProperFilePathCapitalization(pgGetFileNames[z]);
+                    }
+                    swPackAndGo.SetDocumentSaveToNames(pgGetFileNames);
+                    //for (int z = 0;z< )
+                    //pgGetFileNames = (string[])getFileNames;
+                    /*This section is unnecessary and clutters the debug window, add back in at own preference
+                    Debug.Print("");
+                    Debug.Print("  My Pack and Go path and filenames after adding prefix and suffix: ");
+                    for (i = 0; i <= namesCount - 1; i++)
+                    {
+                        Debug.Print("    My path and filename is: " + pgGetFileNames[i]);
+                    }
+                    */
+
+                    // Pack and Go
+                    statuses = (int[])swModelDocExt.SavePackAndGo(swPackAndGo);
+                    //swApp.CloseDoc(modelNames[j]);
+                    swApp.CloseAllDocuments(true);
+                    modelNames.RemoveAt(0); //removes as the very last step to ensure successful execution
+                }
+                catch(Exception e)
+                {
+                    /*
+                    Process swProcess = new Process();
+                    int processID = swApp.GetProcessID();
+                    swProcess = Process.GetProcessById(processID);
+                    swProcess.Kill();
+                    while (swProcess.HasExited == false) { }
+                    */
+                    swApp = null;
+                    Process Solidworks = null;
+                    Debug.Print("Solidworks Crash: Restarting Now");
+                    Console.WriteLine("Solidworks Crash: Restarting Now");
+                    Debug.Print(e.StackTrace);
+                    while (swApp == null)
+                    {
+                        Tuple<SldWorks, Process> tuple = GetSolidworks.Solidworks(2);
+                        swApp = tuple.Item1;
+                        Solidworks = tuple.Item2;
+
+                    }
+                }
+                
+            }
+            /*
             for (int j = 0; j <= modelCount - 1; j++)
             {
                 try
@@ -69,7 +176,7 @@ namespace PackandGo.cs
                     swPackAndGo = (PackAndGo)swModelDocExt.GetPackAndGo();
 
                     savePath = @"C:\Configurator\PackandGoTest\test.zip";
-                    status = swPackAndGo.SetSaveToName(true, savePath);
+                    status = swPackAndGo.SetSaveToName(false, savePath);
                     swPackAndGo.FlattenToSingleFolder = true;
 
                     namesCount = swPackAndGo.GetDocumentNamesCount();
@@ -86,10 +193,19 @@ namespace PackandGo.cs
                     // Verify document paths and filenames after adding prefix and suffix
                     object getFileNames;
                     object getDocumentStatus;
-                    string[] pgGetFileNames = new string[namesCount - 1];
+                    
 
                     status = swPackAndGo.GetDocumentSaveToNames(out getFileNames, out getDocumentStatus);
-                    pgGetFileNames = (string[])getFileNames;
+                    string[] pgGetFileNames = (string[])getFileNames;
+
+                    
+                    for(int z = 0; z < pgGetFileNames.Length; z++)
+                    {
+                        pgGetFileNames[z] = GetProperFilePathCapitalization(pgGetFileNames[z]);
+                    }
+                    swPackAndGo.SetDocumentSaveToNames(pgGetFileNames);
+                    //for (int z = 0;z< )
+                    //pgGetFileNames = (string[])getFileNames;
                     /*This section is unnecessary and clutters the debug window, add back in at own preference
                     Debug.Print("");
                     Debug.Print("  My Pack and Go path and filenames after adding prefix and suffix: ");
@@ -97,8 +213,8 @@ namespace PackandGo.cs
                     {
                         Debug.Print("    My path and filename is: " + pgGetFileNames[i]);
                     }
-                    */
-
+                    
+                    
                     // Pack and Go
                     statuses = (int[])swModelDocExt.SavePackAndGo(swPackAndGo);
                     swApp.CloseDoc(modelNames[j]);
@@ -111,7 +227,7 @@ namespace PackandGo.cs
                     swProcess = Process.GetProcessById(processID);
                     swProcess.Kill();
                     while (swProcess.HasExited == false) { }
-                    */
+                    
                     swApp = null;
                     Process Solidworks = null;
                     Debug.Print("Solidworks Crash: Restarting Now");
@@ -123,14 +239,34 @@ namespace PackandGo.cs
 
                         }
                 }
+                */
+            swApp.Visible = true;
+            swApp.CommandInProgress = false;
             }
+        
+
+        static string GetProperFilePathCapitalization(string filename)
+        {
+            FileInfo fileInfo = new FileInfo(filename);
+            DirectoryInfo dirInfo = fileInfo.Directory;
+            return Path.Combine(GetProperDirectoryCapitalization(dirInfo),
+                                dirInfo.GetFiles(fileInfo.Name)[0].Name);
+        }
+
+        static string GetProperDirectoryCapitalization(DirectoryInfo dirInfo)
+        {
+            DirectoryInfo parentDirInfo = dirInfo.Parent;
+            if (null == parentDirInfo)
+                return dirInfo.Name;
+            return Path.Combine(GetProperDirectoryCapitalization(parentDirInfo),
+                                parentDirInfo.GetDirectories(dirInfo.Name)[0].Name);
         }
     }
 }
 
 static class GetSolidworks
 {
-    private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
+    //private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
     static public Tuple<SldWorks, Process> Solidworks(int Num)
     {
         System.Diagnostics.Process SolidWorksPrc = null;
@@ -140,7 +276,7 @@ static class GetSolidworks
             key.SetValue("SolidWorks Journal Folders", @"C:\Users\tsowers\Documents\Journals\" + Num.ToString());
             SolidWorksPrc = System.Diagnostics.Process.Start(SolidWorksPath());
 
-            System.Threading.Thread.Sleep(25000);
+            System.Threading.Thread.Sleep(11500);
             key.SetValue("SolidWorks Journal Folders", @"C:\Users\tsowers\AppData\Roaming\SolidWorks\SOLIDWORKS 2018");
             key.Dispose();
 
@@ -171,7 +307,7 @@ static class GetSolidworks
         }
         catch (Exception ex)
         {
-            logger.Error(ex, "Error marshalling the solidworks object");
+            //logger.Error(ex, "Error marshalling the solidworks object");
             Debug.Print(Num.ToString() + " Failed to get SldWorks object, will try again");
             //Thread.Sleep(300);
             SolidWorksPrc.Kill();
