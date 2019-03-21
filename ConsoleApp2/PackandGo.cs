@@ -31,9 +31,9 @@ namespace PackandGo.cs
             Tuple<SldWorks, Process> processes = GetSolidworks.Solidworks(1);
             swApp = processes.Item1;
             Process = processes.Item2;
-            swApp.Visible = false;
+            //swApp.Visible = false;
             
-            swApp.CommandInProgress = true;
+            
             //add another line to get item 2 which is the process which you can then use to kill when it derps
 
             /* To be used to more easily choose which assemblies to pack and go
@@ -58,6 +58,7 @@ namespace PackandGo.cs
             
             while(modelNames.Count > 0)
             {
+                SetCheckTimer();
                 int j = 0;
                 try
                 {
@@ -103,7 +104,11 @@ namespace PackandGo.cs
 
                     status = swPackAndGo.GetDocumentSaveToNames(out getFileNames, out getDocumentStatus);
                     string[] pgGetFileNames = (string[])getFileNames;
-
+                    if(pgGetFileNames.Length == 0)
+                    {
+                        status = swPackAndGo.GetDocumentSaveToNames(out getFileNames, out getDocumentStatus);
+                        pgGetFileNames = (string[])getFileNames;
+                    }
 
                     for (int z = 0; z < pgGetFileNames.Length; z++)
                     {
@@ -136,7 +141,7 @@ namespace PackandGo.cs
                     checkTimer.Stop();
                     swApp.CloseAllDocuments(true);
                     modelNames.RemoveAt(0); //removes as the very last step to ensure successful execution
-                    checkTimer.Start();
+                    
                 }
                 catch(Exception e)
                 {
@@ -147,15 +152,23 @@ namespace PackandGo.cs
                     swProcess.Kill();
                     while (swProcess.HasExited == false) { }
                     */
-                    
+                    checkTimer.Stop();
                     swApp = null;
-                    Process.Kill();
+                    try
+                    {
+                        Process.Kill();
+                    }
+                    catch
+                    {
+
+                    }
+                    
                     Debug.Print("Solidworks Crash: Restarting Now");
                     Console.WriteLine("Solidworks Crash: Restarting Now");
                     Debug.Print(e.StackTrace);
                     while (swApp == null)
                     {
-                        Tuple<SldWorks, Process> tuple = GetSolidworks.Solidworks(2);
+                        Tuple<SldWorks, Process> tuple = GetSolidworks.Solidworks(1);
                         swApp = tuple.Item1;
                         Process = tuple.Item2;
 
@@ -168,7 +181,7 @@ namespace PackandGo.cs
             }
             
             swApp.Visible = true;
-            swApp.CommandInProgress = false;
+            
             swApp.SendMsgToUser2("Pack and Go Is Complete!", 2, 2);
             }
         
@@ -184,13 +197,20 @@ namespace PackandGo.cs
         {
             //kill solidworks
             swApp = null;
-            Process.Kill();
-            Debug.Print("Solidworks Crash: Restarting Now");
-            Console.WriteLine("Solidworks Crash: Restarting Now");
+            try
+            {
+                Process.Kill();
+            }
+            catch
+            {
+
+            }
+            Debug.Print("Solidworks Timed out");
+            Console.WriteLine("Solidworks Timed out");
             
             while (swApp == null)
             {
-                Tuple<SldWorks, Process> tuple = GetSolidworks.Solidworks(2);
+                Tuple<SldWorks, Process> tuple = GetSolidworks.Solidworks(1);
                 swApp = tuple.Item1;
                 Process = tuple.Item2;
 
@@ -262,7 +282,12 @@ static class GetSolidworks
             //logger.Error(ex, "Error marshalling the solidworks object");
             Debug.Print(Num.ToString() + " Failed to get SldWorks object, will try again");
             //Thread.Sleep(300);
-            SolidWorksPrc.Kill();
+            SolidWorksPrc.Refresh();
+            if(SolidWorksPrc.HasExited == false)
+            {
+                SolidWorksPrc.Kill();
+            }
+            
             Tuple<SldWorks, Process> tuple = new Tuple<SldWorks, Process>(null, SolidWorksPrc);
             return tuple;
             //SolidWorks(Num);
