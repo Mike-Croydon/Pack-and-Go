@@ -11,12 +11,16 @@ using SolidWorks.Interop.swconst;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using System.Runtime.InteropServices.ComTypes;
+using System.Timers;
 
 
 namespace PackandGo.cs
 {
     class Program
     {
+        private static System.Timers.Timer checkTimer;
+        public static Process Process { get; set; }
+        public static SldWorks swApp { get; set; }
         static void Main()
         {
             ModelDoc2 swModelDoc = default(ModelDoc2);
@@ -25,7 +29,8 @@ namespace PackandGo.cs
             //SldWorks swApp = new SldWorks();
             //GetSolidworks getSW = new GetSolidworks();
             Tuple<SldWorks, Process> processes = GetSolidworks.Solidworks(1);
-            SldWorks swApp = processes.Item1;
+            swApp = processes.Item1;
+            Process = processes.Item2;
             swApp.Visible = false;
             
             swApp.CommandInProgress = true;
@@ -50,7 +55,7 @@ namespace PackandGo.cs
 
             //List<string> modelNames = new List<string>(new string[] { "TR-34-20-400", "TR-34-20-425", "TR-34-20-500" });
             int modelCount = modelNames.Count;
-
+            
             while(modelNames.Count > 0)
             {
                 int j = 0;
@@ -68,9 +73,9 @@ namespace PackandGo.cs
                     openFile = @"C:\Configurator\" + modelNames[j] + ".sldasm";
                     Debug.Print("Performing pack and go on " + modelNames[j]);
                     Console.WriteLine("Performing pack and go on " + modelNames[j]);
-                    swApp.EnableBackgroundProcessing = true;
+                    
                     swModelDoc = swApp.OpenDoc6(openFile, (int)swDocumentTypes_e.swDocASSEMBLY, (int)swOpenDocOptions_e.swOpenDocOptions_Silent, "", ref errors, ref warnings);
-                    swApp.EnableBackgroundProcessing = false;
+                    swModelDoc.Visible = false;
                     swApp.Visible = false; //opendoc6 seems to remove the visiblility setting
                     swModelDocExt = (ModelDocExtension)swModelDoc.Extension;
 
@@ -128,8 +133,10 @@ namespace PackandGo.cs
                     // Pack and Go
                     statuses = (int[])swModelDocExt.SavePackAndGo(swPackAndGo);
                     //swApp.CloseDoc(modelNames[j]);
+                    checkTimer.Stop();
                     swApp.CloseAllDocuments(true);
                     modelNames.RemoveAt(0); //removes as the very last step to ensure successful execution
+                    checkTimer.Start();
                 }
                 catch(Exception e)
                 {
@@ -140,8 +147,9 @@ namespace PackandGo.cs
                     swProcess.Kill();
                     while (swProcess.HasExited == false) { }
                     */
+                    
                     swApp = null;
-                    Process Solidworks = null;
+                    Process.Kill();
                     Debug.Print("Solidworks Crash: Restarting Now");
                     Console.WriteLine("Solidworks Crash: Restarting Now");
                     Debug.Print(e.StackTrace);
@@ -149,103 +157,45 @@ namespace PackandGo.cs
                     {
                         Tuple<SldWorks, Process> tuple = GetSolidworks.Solidworks(2);
                         swApp = tuple.Item1;
-                        Solidworks = tuple.Item2;
+                        Process = tuple.Item2;
 
                     }
                 }
+
+                
+               
                 
             }
-            /*
-            for (int j = 0; j <= modelCount - 1; j++)
-            {
-                try
-                {
-                    string openFile = null;
-                    bool status = false;
-                    int warnings = 0;
-                    int errors = 0;
-                    int i = 0;
-                    int namesCount = 0;
-                    string savePath = null;
-                    int[] statuses = null;
-
-                    openFile = @"C:\Configurator\" + modelNames[j] + ".sldasm";
-                    Debug.Print("Performing pack and go on " + modelNames[j]);
-                    swModelDoc = swApp.OpenDoc6(openFile, (int)swDocumentTypes_e.swDocASSEMBLY, (int)swOpenDocOptions_e.swOpenDocOptions_Silent, "", ref errors, ref warnings);
-                    swModelDocExt = (ModelDocExtension)swModelDoc.Extension;
-
-                    swPackAndGo = (PackAndGo)swModelDocExt.GetPackAndGo();
-
-                    savePath = @"C:\Configurator\PackandGoTest\test.zip";
-                    status = swPackAndGo.SetSaveToName(false, savePath);
-                    swPackAndGo.FlattenToSingleFolder = true;
-
-                    namesCount = swPackAndGo.GetDocumentNamesCount();
-                    Debug.Print("  Number of model documents: " + namesCount);
-
-                    // Include any drawings, SOLIDWORKS Simulation results, and SOLIDWORKS Toolbox components
-                    swPackAndGo.IncludeDrawings = true;
-                    Debug.Print(" Include drawings: " + swPackAndGo.IncludeDrawings);
-                    swPackAndGo.IncludeSimulationResults = true;
-                    Debug.Print(" Include SOLIDWORKS Simulation results: " + swPackAndGo.IncludeSimulationResults);
-                    swPackAndGo.IncludeToolboxComponents = true;
-                    Debug.Print(" Include SOLIDWORKS Toolbox components: " + swPackAndGo.IncludeToolboxComponents);
-
-                    // Verify document paths and filenames after adding prefix and suffix
-                    object getFileNames;
-                    object getDocumentStatus;
-                    
-
-                    status = swPackAndGo.GetDocumentSaveToNames(out getFileNames, out getDocumentStatus);
-                    string[] pgGetFileNames = (string[])getFileNames;
-
-                    
-                    for(int z = 0; z < pgGetFileNames.Length; z++)
-                    {
-                        pgGetFileNames[z] = GetProperFilePathCapitalization(pgGetFileNames[z]);
-                    }
-                    swPackAndGo.SetDocumentSaveToNames(pgGetFileNames);
-                    //for (int z = 0;z< )
-                    //pgGetFileNames = (string[])getFileNames;
-                    /*This section is unnecessary and clutters the debug window, add back in at own preference
-                    Debug.Print("");
-                    Debug.Print("  My Pack and Go path and filenames after adding prefix and suffix: ");
-                    for (i = 0; i <= namesCount - 1; i++)
-                    {
-                        Debug.Print("    My path and filename is: " + pgGetFileNames[i]);
-                    }
-                    
-                    
-                    // Pack and Go
-                    statuses = (int[])swModelDocExt.SavePackAndGo(swPackAndGo);
-                    swApp.CloseDoc(modelNames[j]);
-                }
-                catch
-                {
-                    /*
-                    Process swProcess = new Process();
-                    int processID = swApp.GetProcessID();
-                    swProcess = Process.GetProcessById(processID);
-                    swProcess.Kill();
-                    while (swProcess.HasExited == false) { }
-                    
-                    swApp = null;
-                    Process Solidworks = null;
-                    Debug.Print("Solidworks Crash: Restarting Now");
-                        while (swApp == null)
-                        {
-                            Tuple<SldWorks, Process> tuple = GetSolidworks.Solidworks(2);
-                            swApp = tuple.Item1;
-                            Solidworks = tuple.Item2;
-
-                        }
-                }
-                */
+            
             swApp.Visible = true;
             swApp.CommandInProgress = false;
             swApp.SendMsgToUser2("Pack and Go Is Complete!", 2, 2);
             }
         
+        private static void SetCheckTimer()
+        {
+            checkTimer = new System.Timers.Timer(600000); //10 minutes
+            checkTimer.Elapsed += CheckTimer_Elapsed;
+            checkTimer.AutoReset = true;
+            checkTimer.Enabled = true;
+        }
+
+        private static void CheckTimer_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            //kill solidworks
+            swApp = null;
+            Process.Kill();
+            Debug.Print("Solidworks Crash: Restarting Now");
+            Console.WriteLine("Solidworks Crash: Restarting Now");
+            
+            while (swApp == null)
+            {
+                Tuple<SldWorks, Process> tuple = GetSolidworks.Solidworks(2);
+                swApp = tuple.Item1;
+                Process = tuple.Item2;
+
+            }
+        }
 
         static string GetProperFilePathCapitalization(string filename)
         {
